@@ -1,0 +1,445 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+/* CSS placed here will be applied to all skins */
+
+/* this will 'replace' the login text with the Eve SSO Login Image */
+li#pt-anon_oauth_login > a {
+    background-image: url(https://web.ccpgamescdn.com/eveonlineassets/developers/eve-sso-login-black-small.png);
+    display: block;
+    margin: -10px auto;
+    text-indent: -9999px;
+    width: 195px;
+    height: 30px;
+}
+
+.collapseButton {		/* 'show'/'hide' buttons created dynamically by the        */
+	float: right;		/* CollapsibleTables JavaScript in [[MediaWiki:Common.js]] */
+	font-weight: normal;	/* are styled here so they can be customised.              */
+	text-align: right;
+	width: auto;
+}
+
+li.gallerybox { 
+	/*border:1px solid #582806; */
+	border:1px solid; 
+    /*background-color:#080808; */
+}
+
+li.gallerybox div.thumb { 
+	/*background-color:#080808; */
+    border:none; 
+}
+
+/* CSS placed below this line will be applied only for the UniWiki Tools Template:Tooltip */
+.uniwiki-tooltip
+{
+	position: relative;
+	display: inline;
+}
+.uniwiki-tooltip-frame
+{
+	background-color: var(--background-color-base);
+    /*border: 1px solid #111111;*/
+    /*border: 1px solid;*/
+    border: 1px solid var(--border-color-base);
+    display: none;
+	min-width: 270px;
+    padding: 5px;
+	z-index: 100;
+}
+
+/**
+ * Style for horizontal lists (separator following item).
+ * @source https://www.mediawiki.org/wiki/Snippets/Horizontal_lists
+ * @revision 9 (2016-08-10)
+ * @author [[User:Edokter]]
+ */
+.hlist dl,
+.hlist ol,
+.hlist ul {
+	margin: 0;
+	padding: 0;
+}
+
+/* Display list items inline */
+.hlist dd,
+.hlist dt,
+.hlist li {
+	/* don't trust the note that says margin doesn't work with inline
+	 * removing margin: 0 makes dds have margins again */
+	margin: 0;
+	display: inline;
+}
+
+/* Display nested lists inline */
+.hlist.inline,
+.hlist.inline dl,
+.hlist.inline ol,
+.hlist.inline ul,
+.hlist dl dl,
+.hlist dl ol,
+.hlist dl ul,
+.hlist ol dl,
+.hlist ol ol,
+.hlist ol ul,
+.hlist ul dl,
+.hlist ul ol,
+.hlist ul ul {
+	display: inline;
+}
+
+/* Hide empty list items */
+.hlist .mw-empty-li,
+.hlist .mw-empty-elt {
+	display: none;
+}
+
+/* Generate interpuncts */
+.hlist dt:after {
+	content: ": ";
+}
+
+/* [[User:Arin Mara]] replaced 'content: " · ";' with 'content: "\00A0\25CB";' on [[User:Evon R'al]] advice in '.hlist li:after' */
+.hlist dd:after,
+.hlist li:after {
+	content: "\00A0\25CB"; 
+	font-weight: bold;
+}
+
+.hlist dd:last-child:after,
+.hlist dt:last-child:after,
+.hlist li:last-child:after {
+	content: none;
+}
+
+/* Add parentheses around nested lists */
+.hlist dd dd:first-child:before,
+.hlist dd dt:first-child:before,
+.hlist dd li:first-child:before,
+.hlist dt dd:first-child:before,
+.hlist dt dt:first-child:before,
+.hlist dt li:first-child:before,
+.hlist li dd:first-child:before,
+.hlist li dt:first-child:before,
+.hlist li li:first-child:before {
+	content: " (";
+	font-weight: normal;
+}
+
+.hlist dd dd:last-child:after,
+.hlist dd dt:last-child:after,
+.hlist dd li:last-child:after,
+.hlist dt dd:last-child:after,
+.hlist dt dt:last-child:after,
+.hlist dt li:last-child:after,
+.hlist li dd:last-child:after,
+.hlist li dt:last-child:after,
+.hlist li li:last-child:after {
+	content: ")";
+	font-weight: normal;
+}
+
+/* Put ordinals in front of ordered list items */
+.hlist ol {
+	counter-reset: listitem;
+}
+
+.hlist ol > li {
+	counter-increment: listitem;
+}
+
+.hlist ol > li:before {
+	content: " " counter(listitem) "\a0";
+}
+
+.hlist dd ol > li:first-child:before,
+.hlist dt ol > li:first-child:before,
+.hlist li ol > li:first-child:before {
+	content: " (" counter(listitem) "\a0";
+}
+
+/**
+ * Style for vertical plain unbulleted lists.
+ * [[User:Arin Mara]]
+ */
+.plainlist ol,
+.plainlist ul {
+	line-height: inherit;
+	list-style: none;
+	margin: 0;
+}
+
+.plainlist ol li,
+.plainlist ul li {
+	margin-bottom: 0;
+}
+
+/**
+ * Style for Navigational Templates, both Navboxes and Sidebars.
+ * [[User:Arin Mara]]
+ */
+/* Prevent line breaks in silly places where desired (nowrap) and links when we don't want them to (nowraplinks a) */
+.nowrap,
+.nowraplinks a {
+    white-space: nowrap;
+}
+
+/* But allow wrapping where desired: */
+.wrap,
+.wraplinks a {
+    white-space: normal;
+}
+
+
+/* Used by the [[Template:TOC]] to limit the heading levels show in the table of contents. */
+.toclimit-2 .toclevel-1 ul,
+.toclimit-3 .toclevel-2 ul,
+.toclimit-4 .toclevel-3 ul,
+.toclimit-5 .toclevel-4 ul,
+.toclimit-6 .toclevel-5 ul,
+.toclimit-7 .toclevel-6 ul {
+    display: none;
+}
+
+/* [[User:Arin Mara]] testing @media */
+@media screen and (min-width: 45em) {
+    .o-flex-grid--c2\@sm > .o-flex-grid__item {
+        width: 50%;
+    }
+}
+@media screen and (min-width: 60em) {
+    .o-flex-grid--c2\@md > .o-flex-grid__item {
+        width: 50%;
+    }
+    .o-flex-grid--c3\@md > .o-flex-grid__item {
+        width: 33.3%;
+    }
+    .o-flex-grid--c4\@md > .o-flex-grid__item {
+        width: 25%;
+    }
+}
+@media screen and (min-width: 80em) {
+    .o-flex-grid--c3\@lg > .o-flex-grid__item {
+        width: 33.3%;
+    }
+}
+@media screen and (min-width: 100em) {
+    .o-flex-grid--c2\@lg > .o-flex-grid__item {
+        width: 50%;
+    }
+    .o-flex-grid--c4\@lg > .o-flex-grid__item {
+        width: 25%;
+    }
+}
+
+
+
+/* Main page CSS */
+/* === Main Page Layout (scoped) === */
+.mainpage-wrapper .main-banner {
+    text-align: center;
+}
+
+.mainpage-wrapper .search-area {
+    border-radius: var(--border-radius-base);
+    cursor: pointer;
+    transition: background 0.2s ease;
+    text-align: center;
+}
+
+.mainpage-wrapper .search-area:hover {
+  background: var(--color-surface-3);
+}
+
+
+.mainpage-wrapper .intro-text {
+    text-align: center;
+}
+
+.mainpage-wrapper .info-row {
+    display: flex;
+    gap: 1em;
+    margin: 1em;
+}
+.mainpage-wrapper .info-box {
+  flex: 1 1 32%;
+  display: flex;
+  flex-direction: column;
+  margin: 0 !important;
+}
+
+.mainpage-wrapper pre{
+  white-space: pre-wrap;   /* wrap long lines */
+  word-wrap: break-word;   /* break long words if needed */
+  min-width:250px;
+}
+
+.mainpage-wrapper .info-box,.about-box,.intro-text,.search-area{
+	color: var(--color-emphasized);
+    background-color: var(--color-surface-2);
+    border: var(--border-width-base) solid var(--border-color-base);
+    overflow: auto;
+    border-radius: var(--border-radius-large);
+    padding: 1em;
+    margin: 1em;
+}
+
+/* The banner box */
+.main-banner {
+    position: relative;
+    height: 450px;
+    max-width: 2440px;          /* stop growing beyond image width */
+    margin: 1em auto;           /* centre the container */
+    overflow: hidden;           /* crop sides */
+
+    background-color: var(--color-surface-2);
+    border: var(--border-width-base) solid var(--border-color-base);
+    border-radius: var(--border-radius-large);
+    color: var(--color-emphasized);
+    padding: 0;
+}
+
+/* centre ANY img inside (not just mw-file-element) */
+.main-banner img {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 100%;
+    width: auto;
+    max-width: none;
+}
+
+.main-banner > a { display:block; height:100%; }
+
+
+.mainpage-wrapper .lower-row {
+	display: flex;
+    gap: 1em;
+    margin: 1em;
+}
+
+.mainpage-wrapper .about-box {
+    flex: 1 1 31.3%;
+    margin: 0 !important;
+}
+
+.mainpage-wrapper .link-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    flex: 1 1 65%;
+    justify-content: center;
+}
+
+.mainpage-wrapper .link-tile {
+	width: 200px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background-color: var(--color-surface-2);
+    border: var(--border-width-base) solid var(--border-color-base);
+}
+
+.mainpage-wrapper .link-tile {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  overflow: hidden;
+  background: var(--color-surface-2);
+  border: var(--border-width-base) solid var(--border-color-base);
+}
+
+.mainpage-wrapper .tile-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.mainpage-wrapper .tile-inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.mainpage-wrapper .tile-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  text-align: center;
+  padding: 0.3em;
+  font-weight: bold;
+  font-size: 1em;
+}
+
+.mainpage-wrapper .tile-label a {
+  color: white;
+  text-decoration: none;
+}
+
+.mainpage-wrapper .tile-label a:hover {
+  text-decoration: underline;
+}
+
+/* === Mobile responsiveness === */
+@media (max-width: 1200px) {
+  .mainpage-wrapper .info-row {
+    flex-direction: column;
+  }
+  .mainpage-wrapper .info-box {
+    flex: 1 1 auto;
+  }
+
+  .mainpage-wrapper .lower-row {
+    flex-direction: column;
+  }
+}
+
+.github-badge-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1em;
+}
+
+.github-badge-title {
+  white-space: nowrap;
+}
+
+/* Light mode (default) */
+.patreon-logo-dark {
+  display: none;
+}
+.patreon-logo-light {
+  display: inline;
+}
+
+/* Dark mode(activated via root class) */
+:root.skin-theme-clientpref-night .patreon-logo-light {
+  display: none;
+}
+:root.skin-theme-clientpref-night .patreon-logo-dark {
+  display: inline;
+}
+
+/* ShipArticle — заголовки секций */
+#ship-article .section-title {
+  font-family: 'Trebuchet MS', Arial, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
+  color: #e8f0f8 !important;
+  padding: 8px 20px 8px 17px !important;
+  background: #080c12 !important;
+  border-bottom: 2px solid #1c2838 !important;
+  border-left: 3px solid #4a9aba !important;
+  border-top: none !important;
+  margin: 0 !important;
+  line-height: 1.4 !important;
+  display: block !important;
+}

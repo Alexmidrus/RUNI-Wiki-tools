@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Import an article page (and optionally its images) from wiki into a local article folder."""
+"""Import an article page (and optionally its images) from wiki into data/article."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import argparse
 import ssl
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Sequence
 
 from console_ui import (
     Spinner,
@@ -18,6 +18,7 @@ from console_ui import (
     _info,
     _step_done,
 )
+from project_paths import default_article_root, resolve_path_in_data
 from wiki_api import (
     detect_api_endpoint,
     fetch_binary,
@@ -42,11 +43,12 @@ def write_binary(path: Path, data: bytes) -> None:
     path.write_bytes(data)
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+    default_output = default_article_root()
     parser = argparse.ArgumentParser(
         description=(
             "Импортирует разметку статьи (и, опционально, изображения) "
-            "с вики в папку article/<НазваниеСтатьи>/."
+            "с вики в папку data/article/<НазваниеСтатьи>/."
         )
     )
     parser.add_argument("article_name", help="Название статьи (например: Imperial Navy Slicer)")
@@ -61,8 +63,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--output-root",
-        default="article",
-        help="Корневая папка для выгрузки (по умолчанию: article)",
+        help=(
+            "Папка вывода внутри data/ или абсолютный путь внутри data/ "
+            f"(по умолчанию: {default_output})"
+        ),
     )
     parser.add_argument(
         "--include-images",
@@ -74,10 +78,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Отключить проверку SSL-сертификата (если у вики проблемы с TLS)",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def run_import(args: argparse.Namespace, ssl_context: Optional[ssl.SSLContext]) -> None:
+    output_root = resolve_path_in_data(args.output_root, "article")
     base_url = normalize_base_url(args.wiki_base_url)
     article_name = args.article_name.strip()
 
@@ -104,7 +109,7 @@ def run_import(args: argparse.Namespace, ssl_context: Optional[ssl.SSLContext]) 
 
     # 3. Prepare output directory
     safe_name = sanitize_filename(article_name)
-    target_dir = Path(args.output_root).resolve() / safe_name
+    target_dir = output_root / safe_name
     target_dir.mkdir(parents=True, exist_ok=True)
 
     # 4. Save article markup
@@ -155,8 +160,8 @@ def run_import(args: argparse.Namespace, ssl_context: Optional[ssl.SSLContext]) 
     print(f"Папка: {target_dir}")
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    args = parse_args(argv)
     ssl_context = make_ssl_context(args.insecure)
     try:
         run_with_ssl_fallback(

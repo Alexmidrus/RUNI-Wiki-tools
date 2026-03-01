@@ -1,29 +1,37 @@
 # RUNI Wiki
 
 Инструментарий для офлайн-редактирования контента MediaWiki: шаблоны, статьи, категории и глобальные стили.
-Позволяет загружать данные с целевой вики, редактировать локально и выгружать обратно.
 
-Целевая вики: `https://solarmeta.evecraft.ru`
+Целевая вики по умолчанию: `https://solarmeta.evecraft.ru`
+
+## Ключевые изменения структуры
+
+- Единая точка входа: `main.py` в корне проекта.
+- Все создаваемые скриптами папки и файлы находятся только внутри `data/`.
 
 ## Структура проекта
 
-```
+```text
 RUNI_Wiki/
-├── template/          # Загруженные шаблоны вики
-├── global/            # Глобальные стили и скрипты вики
-│   ├── MediaWiki Common.js
-│   └── MediaWiki_Common.css
-├── article/           # Загруженные статьи и файлы к статьям
-├── category/          # Загруженные страницы категорий
-├── script/            # API-скрипты для взаимодействия с вики
-│   ├── wiki_api.py               # Общие хелперы MediaWiki API
-│   ├── console_ui.py             # Общие хелперы консольного UI
-│   ├── import_template_bundle.py # Импорт шаблона (+doc, +styles.css)
-│   ├── import_article_bundle.py  # Импорт статьи (+изображения)
-│   ├── import_category_bundle.py # Импорт страницы категории
-│   ├── import_page_urls.py       # Импорт URL страниц в YAML
-│   └── exports/                  # Результаты выгрузки (YAML-файлы)
-├── AGENTS.md          # Инструкции для AI-агентов
+├── main.py                  # Единый CLI entrypoint
+├── data/                    # Все импортируемые/генерируемые данные
+│   ├── templates/           # Импортированные шаблоны
+│   ├── article/             # Импортированные статьи (+изображения)
+│   ├── category/            # Импортированные категории
+│   ├── source_url/          # YAML со списками URL
+│   └── global/              # Глобальные файлы MediaWiki
+│       ├── MediaWiki Common.js
+│       └── MediaWiki_Common.css
+├── script/
+│   ├── project_paths.py
+│   ├── wiki_api.py
+│   ├── console_ui.py
+│   ├── import_template_bundle.py
+│   ├── import_article_bundle.py
+│   ├── import_category_bundle.py
+│   ├── import_page_urls.py
+│   └── push_page_via_api.py
+├── AGENTS.md
 └── README.md
 ```
 
@@ -31,249 +39,265 @@ RUNI_Wiki/
 
 - Python 3.13+
 - Виртуальное окружение `.venv`
+- Python-пакет `requests` (для команды `push`)
 
-## Скрипты
+## Единая точка входа
 
-### import_template_bundle.py
-
-Импортирует шаблон, его `/doc` и `/styles.css` с вики в локальную папку.
-
-**Запуск:**
+Общий формат:
 
 ```bash
-./.venv/bin/python script/import_template_bundle.py <имя_шаблона>
+python main.py <command> [аргументы]
 ```
 
-Имя шаблона можно указывать с префиксом пространства имён или без него. Поддерживаемые префиксы: `Шаблон:`, `Template:`. Префикс автоматически распознаётся и отбрасывается при нормализации.
+Доступные команды:
 
-**Примеры:**
+- `template` — импорт шаблона (+`/doc`, +`/styles.css`)
+- `article` — импорт статьи (+опционально изображения)
+- `category` — импорт страницы категории
+- `urls` — импорт URL страниц в YAML
+- `push` — загрузка/обновление страницы на MediaWiki из локального файла
+
+Для справки по конкретной команде:
 
 ```bash
-# Базовый запуск
-./.venv/bin/python script/import_template_bundle.py ShipArticle
-
-# С указанием другой вики
-./.venv/bin/python script/import_template_bundle.py ShipArticle --wiki-base-url https://example.org
-
-# С явным API endpoint
-./.venv/bin/python script/import_template_bundle.py ShipArticle --api-endpoint https://example.org/w/api.php
-
-# Без проверки SSL
-./.venv/bin/python script/import_template_bundle.py ShipArticle --insecure
-
-# В другую папку
-./.venv/bin/python script/import_template_bundle.py ShipArticle --output-root ./my_templates
+python main.py <command> --help
 ```
 
-**Параметры:**
+## Команды
+
+### template
+
+Импортирует шаблон в `data/templates/<ИмяШаблона>/`.
+
+```bash
+python main.py template <имя_шаблона>
+```
+
+Примеры:
+
+```bash
+python main.py template ShipArticle
+python main.py template ShipArticle --wiki-base-url https://example.org
+python main.py template ShipArticle --api-endpoint https://example.org/w/api.php
+python main.py template ShipArticle --insecure
+python main.py template ShipArticle --output-root templates_custom
+```
+
+Параметры:
 
 | Параметр | Описание | По умолчанию |
 |---|---|---|
 | `template_name` | Имя шаблона (позиционный) | — |
 | `--wiki-base-url` | Базовый URL вики | `https://solarmeta.evecraft.ru` |
 | `--api-endpoint` | Явный URL `api.php` | автоопределение |
-| `--output-root` | Корневая папка для выгрузки | `templates` |
+| `--output-root` | Подпапка внутри `data/` или абсолютный путь внутри `data/` | `data/templates` |
 | `--insecure` | Отключить проверку SSL | выключено |
 
-### import_page_urls.py
+### article
 
-Импортирует URL страниц из MediaWiki (шаблоны, категории, статьи) в YAML-файлы.
-
-**Запуск:**
+Импортирует статью в `data/article/<НазваниеСтатьи>/`.
 
 ```bash
-./.venv/bin/python script/import_page_urls.py <mode>
+python main.py article <название_статьи>
 ```
 
-Режимы (`mode`):
-- `templates` — шаблоны (namespace 10)
-- `categories` — категории (namespace 14)
-- `articles` — статьи (namespace 0)
-- `all` — все три, в отдельные файлы
-
-**Примеры:**
+Примеры:
 
 ```bash
-# Импортировать только шаблоны
-./.venv/bin/python script/import_page_urls.py templates
-
-# Импортировать категории
-./.venv/bin/python script/import_page_urls.py categories
-
-# Импортировать статьи
-./.venv/bin/python script/import_page_urls.py articles
-
-# Импортировать всё (три файла)
-./.venv/bin/python script/import_page_urls.py all
-
-# Шаблоны с служебными подстраницами
-./.venv/bin/python script/import_page_urls.py templates --include-service-subpages
-
-# С указанием другой вики
-./.venv/bin/python script/import_page_urls.py templates --wiki-base-url https://example.org
-
-# С явным API endpoint
-./.venv/bin/python script/import_page_urls.py all --api-endpoint https://example.org/w/api.php
-
-# В указанную папку и файл
-./.venv/bin/python script/import_page_urls.py templates --output-dir ./exports --output-file urls.yaml
-
-# Без проверки SSL
-./.venv/bin/python script/import_page_urls.py all --insecure
+python main.py article "Imperial Navy Slicer"
+python main.py article "Imperial Navy Slicer" --include-images
+python main.py article "Imperial Navy Slicer" --wiki-base-url https://example.org
+python main.py article "Imperial Navy Slicer" --api-endpoint https://example.org/w/api.php
+python main.py article "Imperial Navy Slicer" --insecure
+python main.py article "Imperial Navy Slicer" --output-root article_custom
 ```
 
-**Параметры:**
-
-| Параметр | Описание | По умолчанию |
-|---|---|---|
-| `mode` | Режим импорта (позиционный) | — |
-| `--wiki-base-url` | Базовый URL вики | `https://solarmeta.evecraft.ru` |
-| `--api-endpoint` | Явный URL `api.php` | автоопределение |
-| `--output-dir` | Папка для YAML-файла | `script/exports` |
-| `--output-file` | Имя выходного файла (игнорируется при `all`) | генерируется с таймстампом |
-| `--include-service-subpages` | Включить `/doc`, `/styles.css` и т.п. (только для templates) | выключено |
-| `--insecure` | Отключить проверку SSL | выключено |
-
-### import_article_bundle.py
-
-Импортирует разметку статьи с вики в локальную папку. При указании флага `--include-images` также скачивает связанные изображения.
-
-**Запуск:**
-
-```bash
-./.venv/bin/python script/import_article_bundle.py <название_статьи>
-```
-
-Название статьи передаётся как есть (namespace 0, без префикса).
-
-**Примеры:**
-
-```bash
-# Только разметка
-./.venv/bin/python script/import_article_bundle.py "Imperial Navy Slicer"
-
-# Разметка + изображения
-./.venv/bin/python script/import_article_bundle.py "Imperial Navy Slicer" --include-images
-
-# С указанием другой вики
-./.venv/bin/python script/import_article_bundle.py "Imperial Navy Slicer" --wiki-base-url https://example.org
-
-# С явным API endpoint
-./.venv/bin/python script/import_article_bundle.py "Imperial Navy Slicer" --api-endpoint https://example.org/w/api.php
-
-# Без проверки SSL
-./.venv/bin/python script/import_article_bundle.py "Imperial Navy Slicer" --insecure
-
-# В другую папку
-./.venv/bin/python script/import_article_bundle.py "Imperial Navy Slicer" --output-root ./my_articles
-```
-
-**Параметры:**
+Параметры:
 
 | Параметр | Описание | По умолчанию |
 |---|---|---|
 | `article_name` | Название статьи (позиционный) | — |
 | `--wiki-base-url` | Базовый URL вики | `https://solarmeta.evecraft.ru` |
 | `--api-endpoint` | Явный URL `api.php` | автоопределение |
-| `--output-root` | Корневая папка для выгрузки | `article` |
+| `--output-root` | Подпапка внутри `data/` или абсолютный путь внутри `data/` | `data/article` |
 | `--include-images` | Скачать изображения статьи | выключено |
 | `--insecure` | Отключить проверку SSL | выключено |
 
-### import_category_bundle.py
+### category
 
-Импортирует разметку страницы категории с вики в локальную папку.
-
-**Запуск:**
+Импортирует категорию в `data/category/<НазваниеКатегории>/`.
 
 ```bash
-./.venv/bin/python script/import_category_bundle.py <название_категории>
+python main.py category <название_категории>
 ```
 
-Название категории можно указывать с префиксом пространства имён или без него. Поддерживаемые префиксы: `Категория:`, `Category:`. Префикс автоматически распознаётся и отбрасывается при нормализации.
-
-**Примеры:**
+Примеры:
 
 ```bash
-# Базовый запуск (без префикса)
-./.venv/bin/python script/import_category_bundle.py "Фрегаты"
-
-# С префиксом — тоже работает
-./.venv/bin/python script/import_category_bundle.py "Категория:Фрегаты"
-
-# С указанием другой вики
-./.venv/bin/python script/import_category_bundle.py "Фрегаты" --wiki-base-url https://example.org
-
-# С явным API endpoint
-./.venv/bin/python script/import_category_bundle.py "Фрегаты" --api-endpoint https://example.org/w/api.php
-
-# Без проверки SSL
-./.venv/bin/python script/import_category_bundle.py "Фрегаты" --insecure
-
-# В другую папку
-./.venv/bin/python script/import_category_bundle.py "Фрегаты" --output-root ./my_categories
+python main.py category "Фрегаты"
+python main.py category "Категория:Фрегаты"
+python main.py category "Фрегаты" --wiki-base-url https://example.org
+python main.py category "Фрегаты" --api-endpoint https://example.org/w/api.php
+python main.py category "Фрегаты" --insecure
+python main.py category "Фрегаты" --output-root category_custom
 ```
 
-**Параметры:**
+Параметры:
+
+| Параметр          | Описание | По умолчанию |
+|-------------------|---|---|
+| `category_name`   | Название категории (позиционный) | — |
+| `--wiki-base-url` | Базовый URL вики | `https://solarmeta.evecraft.ru` |
+| `--api-endpoint`  | Явный URL `api.php` | автоопределение |
+| `--outСоput-root` | Подпапка внутри `data/` или абсолютный путь внутри `data/` | `data/category` |
+| `--insecure`      | Отключить проверку SSL | выключено |
+
+### urls
+
+Импортирует URL страниц в YAML в `data/source_url/`.
+
+```bash
+python main.py urls <mode>
+```
+
+Режимы:
+
+- `templates` — шаблоны (namespace 10)
+- `categories` — категории (namespace 14)
+- `articles` — статьи (namespace 0)
+- `all` — все три в отдельные файлы
+
+Примеры:
+
+```bash
+python main.py urls templates
+python main.py urls categories
+python main.py urls articles
+python main.py urls all
+python main.py urls templates --include-service-subpages
+python main.py urls templates --wiki-base-url https://example.org
+python main.py urls all --api-endpoint https://example.org/w/api.php
+python main.py urls templates --output-dir exports_custom --output-file urls.yaml
+python main.py urls all --insecure
+```
+
+Параметры:
 
 | Параметр | Описание | По умолчанию |
 |---|---|---|
-| `category_name` | Название категории (позиционный) | — |
+| `mode` | Режим импорта (позиционный) | — |
 | `--wiki-base-url` | Базовый URL вики | `https://solarmeta.evecraft.ru` |
 | `--api-endpoint` | Явный URL `api.php` | автоопределение |
-| `--output-root` | Корневая папка для выгрузки | `category` |
+| `--output-dir` | Подпапка внутри `data/` или абсолютный путь внутри `data/` | `data/source_url` |
+| `--output-file` | Имя выходного файла (игнорируется при `all`) | генерируется с таймстампом |
+| `--include-service-subpages` | Включить `/doc`, `/styles.css` и т.п. (только для templates) | выключено |
 | `--insecure` | Отключить проверку SSL | выключено |
 
-## Структура загруженных файлов
+### push
 
-### Шаблоны (`template/`)
+Загружает/обновляет страницу на целевой MediaWiki через API (`action=edit`) из локального файла `.wiki`.
 
-На каждый шаблон создаётся отдельная папка с именем шаблона. Внутри:
-
+```bash
+python main.py push --file data/pages/Avatar.wiki
 ```
-template/
+
+Параметры:
+
+| Параметр | Описание | По умолчанию |
+|---|---|---|
+| `--api-url` | URL `api.php` (если не указан, берётся из `MW_API_URL`) | из env |
+| `--file` | Путь к локальному файлу статьи (UTF-8) | — |
+| `--title` | Явный title страницы (иначе имя файла без расширения) | из имени файла |
+| `--summary` | Комментарий правки | `Sync from local` |
+| `--minor` | Флаг minor edit | выключено |
+| `--bot` | Флаг bot edit | выключено |
+| `--dry-run` | Показать параметры без сетевых запросов | выключено |
+| `--skip-if-same` | Пропустить edit, если локальный и текущий текст идентичны | выключено |
+
+Переменные окружения для `push`:
+
+- Обязательные:
+  - `MW_API_URL`
+  - `MW_USERNAME`
+  - один из: `MW_BOT_PASSWORD` (приоритет), `MW_PASSWORD`
+- Опционально:
+  - `MW_USER_AGENT`
+
+Шаблон env:
+
+- Используйте файл [`.env.example`](./.env.example) как основу.
+- Скопируйте его в `.env` и заполните своими значениями.
+- В репозиторий коммитится только `.env.example`; `.env` игнорируется.
+- Команда `push` автоматически загружает `.env` из корня проекта при запуске.
+
+Пример запуска:
+
+```powershell
+python main.py push --file data/pages/Avatar.wiki --summary "Sync from local" --skip-if-same
+```
+
+Пример dry-run (без сетевых запросов):
+
+```bash
+python main.py push --file data/pages/Avatar.wiki --dry-run
+```
+
+## Правила путей вывода
+
+- Все output-пути резолвятся строго внутри `data/`.
+- Относительные пути в `--output-root` и `--output-dir` трактуются как подпапки `data/`.
+- Абсолютный путь разрешен только если он находится внутри `data/`.
+- Попытка сохранить вне `data/` завершится ошибкой.
+
+## Структура загруженных данных
+
+### Шаблоны (`data/templates/`)
+
+```text
+data/templates/
 └── ShipArticle/
-    ├── ShipArticle_template      # Код шаблона
-    ├── ShipArticle_styles.css    # Стили шаблона
-    └── ShipArticle_doc           # Документация шаблона
+    ├── ShipArticle
+    ├── ShipArticle_doc
+    └── ShipArticle_styles.css
 ```
 
-Именование файлов:
-- `{имя шаблона}_template` — сам шаблон
-- `{имя шаблона}_styles.css` — стили шаблона
-- `{имя шаблона}_doc` — документация шаблона
+### Статьи (`data/article/`)
 
-### Статьи (`article/`)
-
-На каждую статью создаётся отдельная папка с именем статьи. Внутри хранится файл статьи и связанные изображения.
-
-```
-article/
+```text
+data/article/
 └── Imperial Navy Slicer/
-    ├── Imperial Navy Slicer_article   # Разметка статьи
-    ├── ship_icon.png                  # Изображения к статье (--include-images)
+    ├── Imperial Navy Slicer_article
+    ├── ship_icon.png
     └── ...
 ```
 
-Именование файлов:
-- `{название статьи}_article` — разметка статьи
+### Категории (`data/category/`)
 
-Если название статьи содержит символы, недопустимые для файловой системы (`\`, `/`, `:`, `*`, `?`, `"`, `<`, `>`, `|`), они безопасно заменяются, а в папке создаётся файл `real_name`, в который записывается оригинальное название статьи на вики.
-
-### Категории (`category/`)
-
-На каждую категорию создаётся отдельная папка с именем категории. Внутри — файл с разметкой страницы категории.
-
-```
-category/
+```text
+data/category/
 └── Фрегаты/
-    └── Фрегаты_category   # Разметка страницы категории
+    └── Фрегаты_category
 ```
 
-Именование файлов:
-- `{название категории}_category` — разметка страницы категории
+### URL-выгрузки (`data/source_url/`)
+
+```text
+data/source_url/
+├── template_urls_YYYYMMDD_HHMMSS.yaml
+├── article_urls_YYYYMMDD_HHMMSS.yaml
+└── category_urls_YYYYMMDD_HHMMSS.yaml
+```
+
+### Глобальные файлы (`data/global/`)
+
+```text
+data/global/
+├── MediaWiki Common.js
+└── MediaWiki_Common.css
+```
 
 ## Поток работы
 
-1. Импортировать актуальные данные с вики через скрипты в `script/`.
-2. Редактировать шаблоны, статьи, категории и стили локально.
-3. Экспортировать изменения обратно на вики.
+1. Импортировать актуальные данные с вики (`python main.py ...`).
+2. Редактировать данные локально в `data/` (включая `data/global/`).
+3. Выполнять экспорт обратно на вики (когда будут подключены export-скрипты).

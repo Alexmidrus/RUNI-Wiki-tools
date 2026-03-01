@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Import a template page and its /doc + /styles.css from wiki into local templates folder."""
+"""Import a template page and its /doc + /styles.css from wiki into data/templates."""
 
 from __future__ import annotations
 
@@ -7,8 +7,9 @@ import argparse
 import ssl
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Sequence, Set, Tuple
 
+from project_paths import default_templates_root, resolve_path_in_data
 from wiki_api import (
     detect_api_endpoint,
     fetch_json,
@@ -91,11 +92,12 @@ def write_text(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+    default_output = default_templates_root()
     parser = argparse.ArgumentParser(
         description=(
             "Импортирует код шаблона, шаблона/doc и шаблона/styles.css "
-            "с вики в папку templates/<ИмяШаблона>/."
+            "с вики в папку data/templates/<ИмяШаблона>/."
         )
     )
     parser.add_argument("template_name", help="Имя шаблона (например: ShipArticle)")
@@ -110,18 +112,21 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--output-root",
-        default="templates",
-        help="Корневая папка для выгрузки (по умолчанию: templates)",
+        help=(
+            "Папка вывода внутри data/ или абсолютный путь внутри data/ "
+            f"(по умолчанию: {default_output})"
+        ),
     )
     parser.add_argument(
         "--insecure",
         action="store_true",
         help="Отключить проверку SSL-сертификата (если у вики проблемы с TLS)",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def run_import(args: argparse.Namespace, ssl_context: Optional[ssl.SSLContext]) -> None:
+    output_root = resolve_path_in_data(args.output_root, "templates")
     base_url = normalize_base_url(args.wiki_base_url)
     api_endpoint = (
         args.api_endpoint.rstrip("/")
@@ -149,7 +154,7 @@ def run_import(args: argparse.Namespace, ssl_context: Optional[ssl.SSLContext]) 
     if not main_content:
         raise RuntimeError(f"Основной шаблон не найден или пуст: {main_title}")
 
-    target_dir = Path(args.output_root).resolve() / template_name
+    target_dir = output_root / template_name
     target_main = target_dir / template_name
     target_doc = target_dir / f"{template_name}_doc"
     target_css = target_dir / f"{template_name}_styles.css"
@@ -183,8 +188,8 @@ def run_import(args: argparse.Namespace, ssl_context: Optional[ssl.SSLContext]) 
             print(f"  - {title}")
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    args = parse_args(argv)
     ssl_context = make_ssl_context(args.insecure)
     try:
         run_with_ssl_fallback(

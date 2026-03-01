@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Import page URLs (templates, categories, articles) from a MediaWiki instance into YAML."""
+"""Import page URLs (templates, categories, articles) into YAML under data/source_url."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import ssl
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Sequence, Set, Tuple
 from urllib.parse import urljoin
 
 from console_ui import (
@@ -24,6 +24,7 @@ from console_ui import (
     _step_done,
     _summary_box,
 )
+from project_paths import default_source_url_root, resolve_path_in_data
 from wiki_api import (
     detect_api_endpoint,
     fetch_json,
@@ -248,7 +249,8 @@ def import_namespace(
 # CLI
 # ---------------------------------------------------------------------------
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+    default_output = default_source_url_root()
     parser = argparse.ArgumentParser(
         description=(
             "Импортирует URL страниц из MediaWiki (шаблоны, категории, статьи) в YAML."
@@ -270,7 +272,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--output-dir",
-        help="Папка для YAML (по умолчанию: <папка_скрипта>/exports)",
+        help=(
+            "Папка для YAML внутри data/ или абсолютный путь внутри data/ "
+            f"(по умолчанию: {default_output})"
+        ),
     )
     parser.add_argument(
         "--output-file",
@@ -286,12 +291,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Отключить проверку SSL-сертификата (если API с проблемным TLS)",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def run_import(args: argparse.Namespace, ssl_context: Optional[ssl.SSLContext]) -> None:
-    script_dir = Path(__file__).resolve().parent
-    output_dir = Path(args.output_dir).resolve() if args.output_dir else script_dir / "exports"
+    output_dir = resolve_path_in_data(args.output_dir, "source_url")
     base_url = normalize_base_url(args.wiki_base_url)
 
     if args.mode == "all":
@@ -352,8 +356,8 @@ def run_import(args: argparse.Namespace, ssl_context: Optional[ssl.SSLContext]) 
     _info(f"Готово за {elapsed:.1f} сек.\n")
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    args = parse_args(argv)
     ssl_context = make_ssl_context(args.insecure)
     try:
         run_with_ssl_fallback(

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Import a category page markup from wiki into a local category folder."""
+"""Import a category page markup from wiki into data/category."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import argparse
 import ssl
 import sys
 from pathlib import Path
-from typing import Dict, Optional, Set
+from typing import Dict, Optional, Sequence, Set
 
 from console_ui import (
     Spinner,
@@ -18,6 +18,7 @@ from console_ui import (
     _info,
     _step_done,
 )
+from project_paths import default_category_root, resolve_path_in_data
 from wiki_api import (
     detect_api_endpoint,
     fetch_json,
@@ -97,11 +98,12 @@ def normalize_category_name(input_name: str, category_prefixes: Set[str]) -> str
     return value
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+    default_output = default_category_root()
     parser = argparse.ArgumentParser(
         description=(
             "Импортирует разметку страницы категории "
-            "с вики в папку category/<НазваниеКатегории>/."
+            "с вики в папку data/category/<НазваниеКатегории>/."
         )
     )
     parser.add_argument(
@@ -119,18 +121,21 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--output-root",
-        default="category",
-        help="Корневая папка для выгрузки (по умолчанию: category)",
+        help=(
+            "Папка вывода внутри data/ или абсолютный путь внутри data/ "
+            f"(по умолчанию: {default_output})"
+        ),
     )
     parser.add_argument(
         "--insecure",
         action="store_true",
         help="Отключить проверку SSL-сертификата (если у вики проблемы с TLS)",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def run_import(args: argparse.Namespace, ssl_context: Optional[ssl.SSLContext]) -> None:
+    output_root = resolve_path_in_data(args.output_root, "category")
     base_url = normalize_base_url(args.wiki_base_url)
 
     _header(f"Импорт категории: {args.category_name}")
@@ -165,7 +170,7 @@ def run_import(args: argparse.Namespace, ssl_context: Optional[ssl.SSLContext]) 
 
     # 5. Prepare output directory
     safe_name = sanitize_filename(category_name)
-    target_dir = Path(args.output_root).resolve() / safe_name
+    target_dir = output_root / safe_name
     target_dir.mkdir(parents=True, exist_ok=True)
 
     # 6. Save category markup
@@ -184,8 +189,8 @@ def run_import(args: argparse.Namespace, ssl_context: Optional[ssl.SSLContext]) 
     print(f"Папка: {target_dir}")
 
 
-def main() -> int:
-    args = parse_args()
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    args = parse_args(argv)
     ssl_context = make_ssl_context(args.insecure)
     try:
         run_with_ssl_fallback(

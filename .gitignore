@@ -1,0 +1,40 @@
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Tooling / IDE
+.idea/
+.vscode/
+.claude/
+
+# Test and coverage artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Generated project data
+data/templates/
+data/article/
+data/category/
+data/source_url/
+/data/global/
+
+# Local secrets
+.env
+.env.local
+/roles/
+/.gitignore
+/AGENTS.md
