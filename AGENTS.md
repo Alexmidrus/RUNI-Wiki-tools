@@ -20,15 +20,30 @@
     - `data/source_url/` — YAML со списками URL.
     - `data/global/MediaWiki Common.js` — глобальный JS MediaWiki.
     - `data/global/MediaWiki_Common.css` — глобальные стили MediaWiki.
+  - `roles/` — роли для агента:
+    - `roles/role_1_python_engineer.md`
+    - `roles/role_2_mediawiki_designer.md`
+    - `roles/role_3_translator_eve.md`
+    - `roles/role_4_copywriter_eve.md`
   - `script/project_paths.py` — единые правила путей (`project_root`, `data`, валидация output-путей).
   - `script/wiki_api.py` — общие функции MediaWiki API.
   - `script/console_ui.py` — консольный UI.
-  - `script/import_template_bundle.py` — импорт шаблона.
+  - `script/import_template_bundle.py` — импорт одного шаблона или всех шаблонов.
   - `script/import_article_bundle.py` — импорт статьи.
   - `script/import_category_bundle.py` — импорт категории.
   - `script/import_page_urls.py` — импорт URL в YAML.
+  - `script/push_templates_to_wiki.py` — выгрузка локальных шаблонов и global-стилей на MediaWiki через API.
   - `README.md` — пользовательская документация.
   - `AGENTS.md` — этот файл.
+
+## Роли агента (`roles/`)
+- Перед началом значимой задачи проверять, подходит ли одна из ролей из `roles/`.
+- При профильной задаче использовать соответствующую роль как рабочую инструкцию.
+- Если задача смешанная, допускается комбинирование ролей, но с явным приоритетом основной роли.
+- Если роль и текущие правила конфликтуют:
+  - приоритет у ограничений этого `AGENTS.md`;
+  - затем у инструкции задачи пользователя;
+  - затем у текста роли.
 
 ## Связи и зависимости
 - `main.py` маршрутизирует команды в import-скрипты из `script/`.

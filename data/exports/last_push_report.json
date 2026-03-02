@@ -1,0 +1,48 @@
+{
+  "summary": {
+    "total": 4,
+    "success": 2,
+    "failed": 2,
+    "pending_review": 0,
+    "access_errors": 0,
+    "dry_run": false,
+    "only_filter": "re:^templates/(ShipsMatrix/ShipsMatrix_styles\\.css|Timeline styles/Timeline styles_styles\\.css|Code/Code|Triglavian/Triglavian)$",
+    "reverse": false,
+    "limit": null
+  },
+  "skipped_files": [],
+  "items": [
+    {
+      "file_path": "D:\\Разработка\\RUNI_Wiki\\data\\templates\\Code\\Code",
+      "page_title": "Template:Code",
+      "edit_result": "success",
+      "new_revision_id": 17000,
+      "flaggedrevs_status": "unknown",
+      "error_message": ""
+    },
+    {
+      "file_path": "D:\\Разработка\\RUNI_Wiki\\data\\templates\\ShipsMatrix\\ShipsMatrix_styles.css",
+      "page_title": "Template:ShipsMatrix/styles.css",
+      "edit_result": "fail",
+      "new_revision_id": null,
+      "flaggedrevs_status": "unknown",
+      "error_message": "templatestyles-error-bad-value-for-property: Invalid or unsupported value for property \"font-family\" at line 34 character 16."
+    },
+    {
+      "file_path": "D:\\Разработка\\RUNI_Wiki\\data\\templates\\Timeline styles\\Timeline styles_styles.css",
+      "page_title": "Template:Timeline styles/styles.css",
+      "edit_result": "fail",
+      "new_revision_id": null,
+      "flaggedrevs_status": "unknown",
+      "error_message": "templatestyles-error-bad-value-for-property: Invalid or unsupported value for property \"font-family\" at line 239 character 15."
+    },
+    {
+      "file_path": "D:\\Разработка\\RUNI_Wiki\\data\\templates\\Triglavian\\Triglavian",
+      "page_title": "Template:Triglavian",
+      "edit_result": "success",
+      "new_revision_id": 17001,
+      "flaggedrevs_status": "unknown",
+      "error_message": ""
+    }
+  ]
+}

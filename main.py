@@ -19,6 +19,7 @@ def _load_commands() -> Dict[str, Callable[[Sequence[str] | None], int]]:
     import import_page_urls
     import import_template_bundle
     import push_page_via_api
+    import push_templates_to_wiki
 
     return {
         "template": import_template_bundle.main,
@@ -26,6 +27,7 @@ def _load_commands() -> Dict[str, Callable[[Sequence[str] | None], int]]:
         "category": import_category_bundle.main,
         "urls": import_page_urls.main,
         "push": push_page_via_api.main,
+        "push-templates": push_templates_to_wiki.main,
     }
 
 
@@ -39,8 +41,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "command",
         nargs="?",
-        choices=["template", "article", "category", "urls", "push"],
-        help="Команда: template | article | category | urls | push",
+        choices=["template", "article", "category", "urls", "push", "push-templates"],
+        help="Команда: template | article | category | urls | push | push-templates",
     )
     parser.add_argument(
         "args",

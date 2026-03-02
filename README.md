@@ -30,7 +30,8 @@ RUNI_Wiki/
 │   ├── import_article_bundle.py
 │   ├── import_category_bundle.py
 │   ├── import_page_urls.py
-│   └── push_page_via_api.py
+│   ├── push_page_via_api.py
+│   └── push_templates_to_wiki.py
 ├── AGENTS.md
 └── README.md
 ```
@@ -39,7 +40,7 @@ RUNI_Wiki/
 
 - Python 3.13+
 - Виртуальное окружение `.venv`
-- Python-пакет `requests` (для команды `push`)
+- Python-пакет `requests` (для команд `push`, `push-templates`)
 
 ## Единая точка входа
 
@@ -56,6 +57,7 @@ python main.py <command> [аргументы]
 - `category` — импорт страницы категории
 - `urls` — импорт URL страниц в YAML
 - `push` — загрузка/обновление страницы на MediaWiki из локального файла
+- `push-templates` — массовая выгрузка шаблонов и (опционально) `data/global/*` на MediaWiki
 
 Для справки по конкретной команде:
 
@@ -67,16 +69,18 @@ python main.py <command> --help
 
 ### template
 
-Импортирует шаблон в `data/templates/<ИмяШаблона>/`.
+Импортирует один шаблон или все шаблоны в `data/templates/<ИмяШаблона>/`.
 
 ```bash
 python main.py template <имя_шаблона>
+python main.py template --all
 ```
 
 Примеры:
 
 ```bash
 python main.py template ShipArticle
+python main.py template --all
 python main.py template ShipArticle --wiki-base-url https://example.org
 python main.py template ShipArticle --api-endpoint https://example.org/w/api.php
 python main.py template ShipArticle --insecure
@@ -87,12 +91,12 @@ python main.py template ShipArticle --output-root templates_custom
 
 | Параметр | Описание | По умолчанию |
 |---|---|---|
-| `template_name` | Имя шаблона (позиционный) | — |
+| `template_name` | Имя шаблона (позиционный, опционален при `--all`) | — |
+| `--all` | Импортировать все шаблоны namespace 10 | выключено |
 | `--wiki-base-url` | Базовый URL вики | `https://solarmeta.evecraft.ru` |
 | `--api-endpoint` | Явный URL `api.php` | автоопределение |
 | `--output-root` | Подпапка внутри `data/` или абсолютный путь внутри `data/` | `data/templates` |
 | `--insecure` | Отключить проверку SSL | выключено |
-
 ### article
 
 Импортирует статью в `data/article/<НазваниеСтатьи>/`.
@@ -217,18 +221,18 @@ python main.py push --file data/pages/Avatar.wiki
 Переменные окружения для `push`:
 
 - Обязательные:
-  - `MW_API_URL`
-  - `MW_USERNAME`
-  - один из: `MW_BOT_PASSWORD` (приоритет), `MW_PASSWORD`
+  - `MW_API_URL` или `MEDIAWIKI_API_URL`
+  - `MW_USERNAME` или `MEDIAWIKI_USERNAME`
+  - один из: `MW_BOT_PASSWORD` / `MEDIAWIKI_BOT_PASSWORD` (приоритет), `MW_PASSWORD` / `MEDIAWIKI_PASSWORD`
 - Опционально:
-  - `MW_USER_AGENT`
+  - `MW_USER_AGENT` или `MEDIAWIKI_USER_AGENT`
 
 Шаблон env:
 
 - Используйте файл [`.env.example`](./.env.example) как основу.
 - Скопируйте его в `.env` и заполните своими значениями.
 - В репозиторий коммитится только `.env.example`; `.env` игнорируется.
-- Команда `push` автоматически загружает `.env` из корня проекта при запуске.
+- Команды `push` и `push-templates` автоматически загружают `.env` из корня проекта при запуске.
 
 Пример запуска:
 
@@ -241,6 +245,61 @@ python main.py push --file data/pages/Avatar.wiki --summary "Sync from local" --
 ```bash
 python main.py push --file data/pages/Avatar.wiki --dry-run
 ```
+
+### push-templates
+
+Массово загружает локальные шаблоны из `data/templates/` в соответствующие страницы MediaWiki.
+Дополнительно может выгружать глобальные стили/скрипты из `data/global/`.
+
+Reverse mapping (обратное восстановление title из имени файла):
+
+- `data/templates/<Name>/<Name>` → `Template:<Name>`
+- `data/templates/<Name>/<Name>_doc` → `Template:<Name>/doc`
+- `data/templates/<Name>/<Name>_styles.css` → `Template:<Name>/styles.css`
+- `data/global/MediaWiki_Common.css` → `MediaWiki:Common.css`
+- `data/global/MediaWiki Common.js` → `MediaWiki:Common.js`
+
+```bash
+python main.py push-templates --dry-run
+```
+
+Основные параметры:
+
+| Параметр | Описание | По умолчанию |
+|---|---|---|
+| `--api-url` | URL `api.php` (если не указан, берется из env) | из env |
+| `--templates-root` | Папка шаблонов внутри `data/` | `data/templates` |
+| `--include-global` | Также включить файлы из `data/global` | выключено |
+| `--global-root` | Папка global внутри `data/` | `data/global` |
+| `--manifest` | JSON-карта `relative_path -> page_title` для неоднозначных случаев | не используется |
+| `--only` | Фильтр файлов/тайтлов: glob или `re:<regex>` | не задан |
+| `--limit` | Ограничить число обрабатываемых файлов | без лимита |
+| `--reverse` | Обрабатывать список в обратном порядке | выключено |
+| `--dry-run` | Показать сопоставление без API-запросов | выключено |
+| `--summary` | Комментарий правки | `Sync templates from local` |
+| `--minor` | Отметка minor edit | выключено |
+| `--bot` | Отметка bot edit | выключено |
+| `--editconflict-retries` | Повторы при `editconflict` | `1` |
+| `--no-review` | Не выполнять `action=review` для FlaggedRevs | выключено |
+| `--report-dir` | Куда писать JSON-отчет | `data/exports` |
+
+Примеры:
+
+```bash
+python main.py push-templates --dry-run --limit 10
+python main.py push-templates --only "*_styles.css" --summary "Sync TemplateStyles"
+python main.py push-templates --include-global --only "re:^global/.+\\.css$"
+python main.py push-templates --reverse --limit 20
+```
+
+Отчет пишется в `data/exports/last_push_report.json`:
+
+- `file_path`
+- `page_title`
+- `edit_result`
+- `new_revision_id`
+- `flaggedrevs_status` (`stable|pending|unknown`)
+- `error_message`
 
 ## Правила путей вывода
 

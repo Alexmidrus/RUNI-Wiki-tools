@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -87,19 +88,33 @@ def infer_title(path: str, explicit_title: Optional[str] = None) -> str:
 
 
 def read_env_config() -> Dict[str, str]:
-    api_url = os.getenv("MW_API_URL", "").strip()
-    username = os.getenv("MW_USERNAME", "").strip()
-    bot_password = os.getenv("MW_BOT_PASSWORD", "")
-    user_password = os.getenv("MW_PASSWORD", "")
-    user_agent = os.getenv("MW_USER_AGENT", "").strip() or DEFAULT_USER_AGENT
+    api_url = (
+        os.getenv("MW_API_URL", "").strip()
+        or os.getenv("MEDIAWIKI_API_URL", "").strip()
+    )
+    username = (
+        os.getenv("MW_USERNAME", "").strip()
+        or os.getenv("MEDIAWIKI_USERNAME", "").strip()
+    )
+    bot_password = os.getenv("MW_BOT_PASSWORD", "") or os.getenv(
+        "MEDIAWIKI_BOT_PASSWORD", ""
+    )
+    user_password = os.getenv("MW_PASSWORD", "") or os.getenv("MEDIAWIKI_PASSWORD", "")
+    user_agent = (
+        os.getenv("MW_USER_AGENT", "").strip()
+        or os.getenv("MEDIAWIKI_USER_AGENT", "").strip()
+        or DEFAULT_USER_AGENT
+    )
 
     missing = []
     if not api_url:
-        missing.append("MW_API_URL")
+        missing.append("MW_API_URL|MEDIAWIKI_API_URL")
     if not username:
-        missing.append("MW_USERNAME")
+        missing.append("MW_USERNAME|MEDIAWIKI_USERNAME")
     if not bot_password and not user_password:
-        missing.append("MW_BOT_PASSWORD|MW_PASSWORD")
+        missing.append(
+            "MW_BOT_PASSWORD|MW_PASSWORD|MEDIAWIKI_BOT_PASSWORD|MEDIAWIKI_PASSWORD"
+        )
     if missing:
         raise RuntimeError(f"Отсутствуют обязательные env: {', '.join(missing)}")
 
@@ -144,6 +159,47 @@ def _mw_post(session: requests.Session, api_url: str, data: Dict[str, str]) -> D
     if "error" in payload:
         raise RuntimeError(_extract_api_error(payload))
     return payload
+
+
+def _format_api_value(value: object) -> str:
+    if isinstance(value, (dict, list)):
+        try:
+            return json.dumps(value, ensure_ascii=False, sort_keys=True)
+        except (TypeError, ValueError):
+            return str(value)
+    return str(value)
+
+
+def _extract_edit_failure_details(edit: Dict) -> str:
+    details = []
+    code = str(edit.get("code", "")).strip()
+    info = str(edit.get("info", "")).strip()
+    if code:
+        details.append(f"code={code}")
+    if info:
+        details.append(f"info={info}")
+
+    known_keys = {
+        "result",
+        "code",
+        "info",
+        "newrevid",
+        "newtimestamp",
+        "oldrevid",
+        "pageid",
+        "title",
+        "watched",
+        "nochange",
+        "contentmodel",
+    }
+    for key in sorted(edit.keys()):
+        if key in known_keys:
+            continue
+        value = edit.get(key)
+        if value in (None, "", False):
+            continue
+        details.append(f"{key}={_format_api_value(value)}")
+    return "; ".join(details)
 
 
 def _mw_get_login_token(session: requests.Session, api_url: str) -> str:
@@ -332,6 +388,9 @@ def mw_edit(
         raise RuntimeError("Неожиданный ответ API: отсутствует блок edit")
     result = str(edit.get("result", ""))
     if result != "Success":
+        details = _extract_edit_failure_details(edit)
+        if details:
+            raise RuntimeError(f"Редактирование не выполнено: {result}; {details}")
         raise RuntimeError(f"Редактирование не выполнено: {result}")
     return edit
 
@@ -342,7 +401,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--api-url",
-        help="URL api.php (если не указан, берётся из MW_API_URL)",
+        help="URL api.php (если не указан, берётся из MW_API_URL или MEDIAWIKI_API_URL)",
     )
     parser.add_argument(
         "--file",
@@ -394,7 +453,9 @@ def run_push(args: argparse.Namespace) -> int:
 
     api_url = (args.api_url or config["api_url"]).strip()
     if not api_url:
-        raise RuntimeError("Не задан API URL (параметр --api-url или env MW_API_URL)")
+        raise RuntimeError(
+            "Не задан API URL (параметр --api-url или env MW_API_URL/MEDIAWIKI_API_URL)"
+        )
     _step_done("API endpoint", api_url)
 
     with Spinner("Чтение локального файла"):
