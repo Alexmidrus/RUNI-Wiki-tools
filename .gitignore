@@ -39,3 +39,4 @@ data/source_url/
 /.gitignore
 /AGENTS.md
 /data/
+/.env (1).example
