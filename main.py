@@ -8,7 +8,9 @@ script_dir = Path(__file__).resolve().parent / "script"
 if str(script_dir) not in sys.path:
     sys.path.insert(0, str(script_dir))
 
-from script.cli import CLIApplication
+
+
+from cli import CLIApplication
 
 def main() -> int:
     """Entry point."""
